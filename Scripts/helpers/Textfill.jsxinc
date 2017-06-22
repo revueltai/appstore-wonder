@@ -1,0 +1,109 @@
+/*
+Author: Ignacio Revuelta
+www.iamnacho.com
+
+Description:
+Resizes a paragraph text layer until it fits the layer's bounds
+
+Code is based on these scripts:
+https://github.com/jquery-textfill
+http://stackoverflow.com/questions/28900505/extendscript-how-to-check-whether-text-content-overflows-the-containing-rectang
+*/
+
+var Textfill = (function() {
+
+  function Textfill(layer) {
+
+    if (this.getLayerDimensions(layer).height < this.getTextLayerDimensions(layer).height) {
+
+      var settings = {
+        minFontPixels: parseInt(layer.textItem.size / 2),
+        maxFontPixels: (parseInt(layer.textItem.size) <= 0) ? layer.textItem.height : parseInt(layer.textItem.size),
+        maxWidth: layer.textItem.width,
+        maxHeight: layer.textItem.height
+      }
+
+      var reference = this.createReferenceLayer(layer)
+      var fontSizeHeight = this.resize('height', reference, settings.maxHeight, settings.maxHeight, settings.maxWidth, settings.minFontPixels, settings.maxFontPixels)
+      var fontSizeWidth = this.resize('width', reference, settings.maxWidth, settings.maxHeight, settings.maxWidth, settings.minFontPixels, settings.maxFontPixels)
+
+      reference.remove()
+
+      var finalSize = Math.min(fontSizeHeight, fontSizeWidth)
+
+      this.setFontSize(layer, finalSize)
+    }
+  }
+
+  Textfill.prototype = {
+
+    resize: function(prefix, reference, limit, maxHeight, maxWidth, minFontPixels, maxFontPixels) {
+      var lastFontSize
+
+      while (minFontPixels < (maxFontPixels - 1)) {
+        var fontSize = Math.floor((minFontPixels + maxFontPixels) / 2)
+
+        this.setFontSize(reference, fontSize)
+        if (fontSize == lastFontSize) {
+          break
+        } else if (this.getReferenceSize(prefix, reference) <= limit) {
+          minFontPixels = fontSize
+          if (this.getReferenceSize(prefix, reference) == limit) {
+            break
+          }
+        } else {
+          maxFontPixels = fontSize
+        }
+
+        lastFontSize = fontSize
+      }
+
+      this.setFontSize(reference, maxFontPixels);
+      if (this.getReferenceSize(prefix, reference) <= limit) {
+        minFontPixels = maxFontPixels
+      }
+      return minFontPixels
+    },
+
+    createReferenceLayer: function(original) {
+      var reference = original.duplicate(activeDocument, ElementPlacement.INSIDE)
+      reference.name = 'ref_' + original.name
+      reference.textItem.kind = TextType.POINTTEXT
+      reference.textItem.contents = original.textItem.contents
+      return reference
+    },
+
+    getReferenceSize: function(action, reference) {
+      reference.textItem.kind = TextType.PARAGRAPHTEXT
+      var result = (action == 'width') ? reference.textItem.width : reference.textItem.height
+      reference.textItem.kind = TextType.POINTTEXT
+      return result
+    },
+
+    getTextLayerDimensions: function(original) {
+      var copy = original.duplicate(activeDocument, ElementPlacement.INSIDE)
+      copy.textItem.kind = TextType.PARAGRAPHTEXT
+      copy.textItem.height = new UnitValue(500, 'px') //500 should be enough height to reveal all hidden texts
+
+      var dimensions = this.getLayerDimensions(copy)
+      copy.rasterize(RasterizeType.TEXTCONTENTS)
+      copy.remove()
+
+      return dimensions
+    },
+
+    getLayerDimensions: function(layer) {
+      return {
+        width: layer.bounds[2] - layer.bounds[0],
+        height: layer.bounds[3] - layer.bounds[1]
+      }
+    },
+
+    setFontSize: function(reference, size) {
+      reference.textItem.size = new UnitValue(size, 'px')
+    }
+  }
+
+  return Textfill
+
+})()

@@ -1,0 +1,31 @@
+/*
+Author: Ignacio Revuelta
+www.iamnacho.com
+
+Description:
+Creates a log file to trace/debug values
+*/
+
+var Console = {
+  settings: {
+    savePath: Folder.desktop,
+    active: false
+  },
+
+  log: function() {
+    var saveFile = new File(this.settings.savePath + '/log.js')
+    var mode = saveFile.exists ? 'a' : 'w'
+    saveFile.encoding = 'UTF8'
+    saveFile.open(mode, 'TEXT', '????')
+
+    if (!this.settings.active) {
+      saveFile.writeln('/* ------ */')
+      this.settings.active = true
+    }
+
+    var args = Array.prototype.slice.call(arguments, 0)
+    saveFile.writeln(args.join(', '))
+
+    saveFile.close()
+  }
+}

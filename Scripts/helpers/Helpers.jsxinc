@@ -1,0 +1,290 @@
+/*
+Author: Ignacio Revuelta
+www.iamnacho.com
+
+Description:
+Helpers for Photoshop scripts
+*/
+
+var Helpers = {
+
+  getInternalFontName: function(pFontName, currentFont) {
+    if (pFontName != '') {
+      for (var i = 0; i < app.fonts.length; i++) {
+        if (pFontName == app.fonts[i].postScriptName || pFontName == app.fonts[i].name) {
+          return app.fonts[i].postScriptName
+        }
+      }
+    }
+    return currentFont
+  },
+
+  makeActiveLayerByName: function(layerName) {
+    try {
+      if (layerName !== '') {
+        var desc = new ActionDescriptor()
+        var ref = new ActionReference()
+        ref.putName(charIDToTypeID("Lyr "), layerName)
+        desc.putReference(charIDToTypeID("null"), ref)
+        desc.putBoolean(charIDToTypeID("MkVs"), false)
+        executeAction(charIDToTypeID("slct"), desc, DialogModes.NO)
+        return activeDocument.activeLayer
+      }
+    } catch (e) {}
+  },
+
+  makeTextLayer: function() {
+    var desc = new ActionDescriptor()
+    var desc2 = new ActionDescriptor()
+    var ref = new ActionReference()
+    ref.putClass(app.charIDToTypeID('TxLr'))
+    desc.putReference(app.charIDToTypeID('null'), ref)
+    desc2.putString(app.charIDToTypeID('Txt '), "text")
+    var list2 = new ActionList()
+    desc2.putList(app.charIDToTypeID('Txtt'), list2)
+    desc.putObject(app.charIDToTypeID('Usng'), app.charIDToTypeID('TxLr'), desc2)
+    executeAction(app.charIDToTypeID('Mk  '), desc, DialogModes.NO)
+    return app.activeDocument.activeLayer
+  },
+
+  duplicateLayers: function() {
+    var actionDescriptor = new ActionDescriptor()
+    var actionReference = new ActionReference()
+    var actionReference2 = new ActionReference()
+    actionReference.putClass(charIDToTypeID('Dcmn'))
+    actionDescriptor.putReference(charIDToTypeID('null'), actionReference)
+    actionDescriptor.putString(charIDToTypeID('Nm  '), activeDocument.activeLayer.name)
+    actionReference2.putEnumerated(charIDToTypeID('Lyr '), charIDToTypeID('Ordn'), charIDToTypeID('Trgt'))
+    actionDescriptor.putReference(charIDToTypeID('Usng'), actionReference2)
+    executeAction(charIDToTypeID('Mk  '), actionDescriptor, DialogModes.NO)
+  },
+
+  hideAllLayersInGroup: function(groupObj) {
+    activeDocument.activeLayer = groupObj
+    for (var i = 0; i < groupObj.layers.length; ++i) {
+      activeDocument.activeLayer = groupObj.layers[i]
+      groupObj.layers[i].visible = false
+    }
+  },
+
+  showAllLayersInGroup: function(groupObj) {
+    activeDocument.activeLayer = groupObj
+    for (var i = 0; i < groupObj.layers.length; ++i) {
+      activeDocument.activeLayer = groupObj.layers[i]
+      groupObj.layers[i].visible = true
+    }
+  },
+
+  createFolder: function(folderPath) {
+    if (!folderPath) {
+      var folderPath = activeDocument.path + '/_exports'
+    }
+    var saveFolder = new Folder(folderPath)
+    if (!saveFolder.exists) {
+      saveFolder.create()
+    }
+    return folderPath
+  },
+
+  saveImage: function(fileName, format, quality) {
+    var saveOptions
+    switch (format) {
+      case 'jpg':
+        saveOptions = new JPEGSaveOptions()
+        break;
+      case 'png':
+        saveOptions = new PNGSaveOptions()
+        break;
+    }
+
+    saveOptions.embedColorProfile = true
+    saveOptions.formatOptions = FormatOptions.STANDARDBASELINE
+    saveOptions.matte = MatteType.NONE
+    saveOptions.quality = quality
+
+    activeDocument.saveAs(File(fileName), saveOptions, true)
+  },
+
+  saveImageForWeb: function(fileName, format, quality) {
+    var saveOptions = new ExportOptionsSaveForWeb()
+    switch (format) {
+      case 'jpg':
+        saveOptions.format = SaveDocumentType.JPEG
+        break;
+      case 'png':
+        saveOptions.format = SaveDocumentType.PNG
+        saveOptions.PNG8 = false
+        saveOptions.transparency = true
+        break;
+      default:
+        saveOptions.format = SaveDocumentType.JPEG
+    }
+
+    saveOptions.includeProfile = false
+    saveOptions.interlaced = false
+    saveOptions.optimized = true
+    saveOptions.quality = quality
+    activeDocument.exportDocument(File(fileName), ExportType.SAVEFORWEB, saveOptions)
+  },
+
+  savePSD: function(fileName) {
+    var saveOptions = new PhotoshopSaveOptions()
+    saveOptions.layers = true
+    saveOptions.embedColorProfile = true
+    saveOptions.annotations = true
+    saveOptions.alphaChannels = true
+    saveOptions.spotColors = true
+    activeDocument.saveAs(File(fileName), saveOptions, true)
+  },
+
+  isValidFileExtension: function(inFileName, inArrayOfFileExtensions) {
+    var lastDot = inFileName.toString().lastIndexOf('.')
+    if (lastDot == -1) {
+      return false
+    }
+    var strLength = inFileName.toString().length
+    var extension = inFileName.toString().substr(lastDot + 1, strLength - lastDot)
+    extension = extension.toLowerCase()
+    for (var i = 0; i < inArrayOfFileExtensions.length; ++i) {
+      if (extension == inArrayOfFileExtensions[i]) {
+        return true
+      }
+    }
+    return false
+  },
+
+  isArtboard: function() {
+    var ref = new ActionReference()
+    ref.putEnumerated(charIDToTypeID('Lyr '), charIDToTypeID('Ordn'), charIDToTypeID('Trgt'))
+    return executeActionGet(ref).getBoolean(stringIDToTypeID('artboardEnabled'))
+  },
+
+  createArtboard: function(inLayerRef, inRect) {
+    var ref = new ActionReference()
+    var desc = new ActionDescriptor()
+    ref.putClass(classArtboardSection)
+    desc.putReference(idnull, ref)
+    desc.putObject(idartboardRect, classFloatRect, this.rectToDesc(inRect))
+    this.doAction('make', desc)
+  },
+
+  resizeArtboard: function(inLayerRef, inRect) {
+    var desc = new ActionDescriptor()
+    var abDesc = new ActionDescriptor()
+    desc.putReference(stringIDToTypeID('null'), inLayerRef)
+    abDesc.putObject(stringIDToTypeID('artboardRect'), stringIDToTypeID('classFloatRect'), this.rectToDesc(inRect))
+    desc.putObject(stringIDToTypeID('artboard'), stringIDToTypeID('artboard'), abDesc)
+    this.doAction('editArtboardEvent', desc)
+  },
+
+  resizeArtboardRect: function(width, height) {
+    var ref = new ActionReference()
+    ref.putEnumerated(charIDToTypeID('Lyr '), charIDToTypeID('Ordn'), charIDToTypeID('Trgt'))
+    var artBoardRect = executeActionGet(ref).getObjectValue(stringIDToTypeID('artboard')).getObjectValue(stringIDToTypeID('artboardRect'))
+    return output = {
+      top: artBoardRect.getDouble(stringIDToTypeID('top')),
+      left: artBoardRect.getDouble(stringIDToTypeID('left')),
+      bottom: artBoardRect.getDouble(stringIDToTypeID('top')) + height,
+      right: artBoardRect.getDouble(stringIDToTypeID('left')) + width
+    }
+  },
+
+  rectToDesc: function(inRect) {
+    var rect = new ActionDescriptor()
+    rect.putDouble(stringIDToTypeID('top'), inRect.top)
+    rect.putDouble(stringIDToTypeID('left'), inRect.left)
+    rect.putDouble(stringIDToTypeID('right'), inRect.right)
+    rect.putDouble(stringIDToTypeID('bottom'), inRect.bottom)
+    return rect
+  },
+
+  doAction: function(inActionName, inDescriptor) {
+    return executeAction(stringIDToTypeID(inActionName), inDescriptor, DialogModes.NO)
+  },
+
+  targetLayers: function() {
+    var actionReference = new ActionReference()
+    actionReference.putEnumerated(charIDToTypeID('Lyr '), charIDToTypeID('Ordn'), charIDToTypeID('Trgt'))
+    return actionReference
+  },
+
+  rasterizeLayer: function() {
+    var idrasterizeLayer = stringIDToTypeID("rasterizeLayer");
+    var desc5 = new ActionDescriptor()
+    var idnull = charIDToTypeID("null")
+    var ref4 = new ActionReference()
+    var idLyr = charIDToTypeID("Lyr ")
+    var idOrdn = charIDToTypeID("Ordn")
+    var idTrgt = charIDToTypeID("Trgt")
+    ref4.putEnumerated(idLyr, idOrdn, idTrgt)
+    desc5.putReference(idnull, ref4)
+    var idWhat = charIDToTypeID("What")
+    var idrasterizeItem = stringIDToTypeID("rasterizeItem")
+    var idlayerStyle = stringIDToTypeID("layerStyle")
+    desc5.putEnumerated(idWhat, idrasterizeItem, idlayerStyle)
+    executeAction(idrasterizeLayer, desc5, DialogModes.NO)
+  },
+
+  fitLayerToCanvas: function(width, height, keepAspect) {
+    var layer = activeDocument.activeLayer
+    if (layer.isBackgroundLayer || layer.allLocked || layer.pixelsLocked || layer.positionLocked || layer.transparentPixelsLocked) {
+      return
+    }
+
+    var defaultRulerUnits = app.preferences.rulerUnits
+    app.preferences.rulerUnits = Units.PIXELS
+
+    var width = width + ' px'
+    var height = height + ' px'
+    var bounds = activeDocument.activeLayer.bounds
+    var layerWidth = bounds[2].as('px') - bounds[0].as('px')
+    var layerHeight = bounds[3].as('px') - bounds[1].as('px')
+
+    if (!keepAspect) {
+      layer.resize((width / layerWidth) * 100, (height / layerHeight) * 100, AnchorPosition.TOPLEFT)
+    } else {
+      var layerRatio = layerWidth / layerHeight
+      var newWidth = width
+      var newHeight = ((1.0 * width) / layerRatio)
+      if (newHeight >= height) {
+        newWidth = layerRatio * height
+        newHeight = height
+      }
+      var resizePercent = newWidth / layerWidth * 100
+      app.activeDocument.activeLayer.resize(resizePercent, resizePercent, AnchorPosition.TOPLEFT)
+    }
+    app.preferences.rulerUnits = defaultRulerUnits
+  },
+
+  createSmartObject: function() {
+    try {
+      executeAction(stringIDToTypeID('newPlacedLayer'), undefined, DialogModes.NO)
+    } catch (error) {}
+  },
+
+  setParagraphDirection: function(directionValue) {
+    var idsetd = charIDToTypeID("setd")
+    var desc40 = new ActionDescriptor()
+    var idnull = charIDToTypeID("null")
+    var ref8 = new ActionReference()
+    var idPrpr = charIDToTypeID("Prpr")
+    var idparagraphStyle = stringIDToTypeID("paragraphStyle")
+    ref8.putProperty(idPrpr, idparagraphStyle)
+    var idTxLr = charIDToTypeID("TxLr")
+    var idOrdn = charIDToTypeID("Ordn")
+    var idTrgt = charIDToTypeID("Trgt")
+    ref8.putEnumerated(idTxLr, idOrdn, idTrgt)
+    desc40.putReference(idnull, ref8)
+    var idT = charIDToTypeID("T   ")
+    var desc41 = new ActionDescriptor()
+    var idtextOverrideFeatureName = stringIDToTypeID("textOverrideFeatureName")
+    desc41.putInteger(idtextOverrideFeatureName, 808466481)
+    var iddirectionType = stringIDToTypeID("directionType")
+    var iddirectionType = stringIDToTypeID("directionType")
+    var iddirCurrent = stringIDToTypeID(directionValue)
+    desc41.putEnumerated(iddirectionType, iddirectionType, iddirCurrent)
+    var idparagraphStyle = stringIDToTypeID("paragraphStyle")
+    desc40.putObject(idT, idparagraphStyle, desc41)
+    executeAction(idsetd, desc40, DialogModes.NO)
+  }
+}
