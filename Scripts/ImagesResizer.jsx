@@ -27,7 +27,8 @@ var ImagesResizer = (function() {
       'iphone6+': [1242, 2208],
       'iphone6': [750, 1334],
       'iphone5': [640, 1136],
-      'iphone4': [640, 960]
+      'iphone4': [640, 960],
+      'kindle': [1920, 1080]
     }
 
     this.mainFile = '';
@@ -81,8 +82,8 @@ var ImagesResizer = (function() {
 
       var footer = view.add ('group')
       footer.orientation = 'row'
-      var btnContinue = footer.add("button", undefined, "Continue")
       var btnClose = footer.add("button", undefined, "Cancel")
+      var btnContinue = footer.add("button", undefined, "Continue")
 
       selector.addEventListener('change', function() {
         self.outputDevice = this.selection.text

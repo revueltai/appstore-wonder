@@ -124,7 +124,7 @@ var Helpers = {
     saveOptions.interlaced = false
     saveOptions.optimized = true
     saveOptions.quality = quality
-    activeDocument.exportDocument(File(fileName), ExportType.SAVEFORWEB, saveOptions)
+    activeDocument.exportDocument(File(fileName + '.' + format), ExportType.SAVEFORWEB, saveOptions)
   },
 
   savePSD: function(fileName) {

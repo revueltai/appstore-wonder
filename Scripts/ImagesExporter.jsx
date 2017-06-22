@@ -214,7 +214,7 @@ var ImagesExporter = (function() {
           saveFileName = layerName
         }
 
-        Helpers.saveImage(saveFolderPath + saveFileName, this.format, 10)
+        Helpers.saveImageForWeb(saveFolderPath + saveFileName, this.format, 10)
         activeDocument.close(SaveOptions.DONOTSAVECHANGES);
       }
 
