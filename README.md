@@ -2,7 +2,7 @@
 These Photoshop scripts will help you speed up the production/localization/export of screeshots for the AppStore or Google Play.
 It combines Photoshop’s JSX scripts, some pretty simple PSD templates and some JSONs to handle the localizations.
 
-#Installation steps
+## Installation steps
 
 1.  Install the Scripts:  
     Copy the Files in the folder **Scripts/** into photoshop’s Scripts folder.  
@@ -10,7 +10,7 @@ It combines Photoshop’s JSX scripts, some pretty simple PSD templates and some
 
 2.  Start or restart Photoshop to get the scripts listed. You will find them in **File > Scripts**
 
-#The Project structure
+## The Project structure
 
 It includes 2 folders:
 
@@ -34,7 +34,7 @@ Example_folder/	                # You can rename it as you want
 |-- Exports/                    # Optional folder were to place all generated files (script generated)
 ```
 
-##Preparing the files
+## Preparing the files
 
 Once you have installed the scripts you will need to:  
 
@@ -67,7 +67,7 @@ You can add new subfolders, but they should contain a `images.json` file like th
 
 **Replace/Rename the text layers inside the template PSDs that you will need:** Replace/Rename the text layers according to the language keys that you defined in the JSON files of point 1\. For example, if your JSON files have a key named “foo” the templates should also have a textfield named “foo”. You can add or remove texts layers as you require.
 
-##Using the Scripts
+## Using the Scripts
 
 If you followed all previous points correctly you can now run the scripts.
 There are 3 different scripts:
