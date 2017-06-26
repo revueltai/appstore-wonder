@@ -3,7 +3,7 @@ Author: Ignacio Revuelta
 www.iamnacho.com
 
 Description:
-This script reads all PSD files inside a given folder, then saves each of the artboards as images (PNG, JPG)
+This script reads all PSD files inside a given folder, then saves each of the Artboards as images (PNG, JPG)
 */
 
 #target photoshop
@@ -16,14 +16,15 @@ var ImagesExporter = (function() {
 
   function ImagesExporter() {
 
-    this.view = null
-    this.inputFolder = null
-    this.saveFolderPath = null
-    this.outputOrientation = 'portrait'
-    this.outputDevice = ''
-    this.format = 'jpg'
-    this.devicesNameList = new Array()
-    this.devicesNameList[0] = ''
+    this.timestamp = + new Date();
+    this.view = null;
+    this.inputFolder = null;
+    this.saveFolderPath = null;
+    this.outputOrientation = 'portrait';
+    this.outputDevice = '';
+    this.format = 'jpg';
+    this.devicesNameList = new Array();
+    this.devicesNameList[0] = '';
     this.devices = {
       'ipadPro': [2048, 2732],
       'ipad': [1536, 2048],
@@ -42,17 +43,17 @@ var ImagesExporter = (function() {
 
     for (var key in this.devices) {
       if (this.devices.hasOwnProperty(key)) {
-        this.devicesNameList.push(key)
+        this.devicesNameList.push(key);
       }
     }
-    this.UIcreateWindow()
+    this.UIcreateWindow();
   }
 
   ImagesExporter.prototype = {
 
     UIcreateWindow: function() {
-      var self = this
-      this.view = new Window('dialog', 'Images Exporter')
+      var self = this;
+      this.view = new Window('dialog', 'Images Exporter');
 
       var view = this.view
       view.preferredSize = [200, 300]
@@ -101,8 +102,11 @@ var ImagesExporter = (function() {
 
       panelFolderInputBtn.addEventListener('click', function() {
         self.inputFolder = Folder.selectDialog('Select a folder of documents to process')
-        self.saveFolderPath = (String(self.inputFolder).match('/Source_files') != -1) ? String(self.inputFolder).split('/Source_files')[0] : self.inputFolder
-        self.saveFolderPath = self.saveFolderPath + '/'
+        if (String(self.inputFolder).indexOf('/Source_files') != -1) {
+          self.saveFolderPath = String(self.inputFolder).split('/Source_files')[0] + '/';
+        } else {
+          self.saveFolderPath = self.inputFolder + '/';
+        }
 
         panelFolderInputField.text = self.inputFolder
         panelFolderSaveField.text = self.saveFolderPath
@@ -135,7 +139,7 @@ var ImagesExporter = (function() {
           view.close()
           self.initialize()
         } else {
-          alert('Please, fill all required fields')
+          alert('Please, fill all required fields');
         }
       })
 
@@ -143,12 +147,12 @@ var ImagesExporter = (function() {
     },
 
     initialize: function() {
-      var workFiles = []
-      var fileList = this.inputFolder.getFiles()
+      var workFiles = [];
+      var fileList = this.inputFolder.getFiles();
       for (var i = 0; i < fileList.length; ++i) {
         if (fileList[i] instanceof File && !fileList[i].hidden && Helpers.isValidFileExtension(fileList[i], Array('psd'))) {
-          fileName = String(fileList[i]).split('/').pop()
-          documentName = fileName.substring(0, fileName.indexOf('.'))
+          fileName = String(fileList[i]).split('/').pop();
+          documentName = fileName.substring(0, fileName.indexOf('.'));
           workFiles.push({
             file: fileList[i],
             name: documentName
@@ -176,56 +180,56 @@ var ImagesExporter = (function() {
 
     handleActiveFile: function(file, saveFolder) {
 
-      open(file)
+      open(file);
 
       if (!documents.length) {
-        return
+        return;
       }
 
-      var w = null
-      var h = null
-      var baseDocument = activeDocument
+      var w = null;
+      var h = null;
+      var baseDocument = activeDocument;
 
       if (this.outputDevice != '') {
-        var outputSize = this.devices[this.outputDevice]
+        var outputSize = this.devices[this.outputDevice];
         if (this.outputOrientation === 'portrait') {
-          w = outputSize[0]
-          h = outputSize[1]
+          w = outputSize[0];
+          h = outputSize[1];
         } else if(this.outputOrientation === 'landscape') {
-          w = outputSize[1]
-          h = outputSize[0]
+          w = outputSize[1];
+          h = outputSize[0];
         }
       }
 
-      var saveFolderPath = Helpers.createFolder(this.saveFolderPath + saveFolder + '/')
-      var saveFileName = null
+      var saveFolderPath = Helpers.createFolder(this.saveFolderPath + '/Images-' + this.timestamp + '/' + saveFolder + '/');
+      var saveFileName = null;
 
       for (var i = 0; i < baseDocument.layerSets.length; ++i) {
-        var layerName = baseDocument.layerSets[i].name
-        activeDocument.activeLayer = activeDocument.layers.getByName(layerName)
-        Helpers.duplicateLayers()
-        activeDocument.mergeVisibleLayers()
-        activeDocument.trim(TrimType.TRANSPARENT, true, true, true, true)
+        var layerName = baseDocument.layerSets[i].name;
+        activeDocument.activeLayer = activeDocument.layers.getByName(layerName);
+        Helpers.duplicateLayers();
+        activeDocument.mergeVisibleLayers();
+        activeDocument.trim(TrimType.TRANSPARENT, true, true, true, true);
 
         if (this.outputDevice != '') {
-          saveFileName = layerName + '_' + String(this.outputDevice) + '_' + layerName + '.Screenshot-' + w + 'x' + h
-          activeDocument.resizeCanvas(w, h)
+          saveFileName = layerName + '_' + String(this.outputDevice) + '_' + layerName + '.Screenshot-' + w + 'x' + h;
+          activeDocument.resizeCanvas(w, h);
         } else {
-          saveFileName = layerName
+          saveFileName = layerName;
         }
 
-        Helpers.saveImageForWeb(saveFolderPath + saveFileName, this.format, 10)
+        Helpers.saveImageForWeb(saveFolderPath + saveFileName, this.format, 10);
         activeDocument.close(SaveOptions.DONOTSAVECHANGES);
       }
 
-      activeDocument.close(SaveOptions.DONOTSAVECHANGES)
+      activeDocument.close(SaveOptions.DONOTSAVECHANGES);
     }
   }
 
-  return ImagesExporter
+  return ImagesExporter;
 
 })()
 
 ////////////////////////////////////
 
-new ImagesExporter()
+new ImagesExporter();
