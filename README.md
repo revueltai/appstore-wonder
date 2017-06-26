@@ -2,7 +2,7 @@
 These Photoshop scripts will help you speed up the production/localization/export of screeshots for the AppStore or Google Play.
 It combines Photoshop’s JSX scripts, some pretty simple PSD templates and some JSONs to handle the localizations.
 
-##Installation steps
+#Installation steps
 
 1.  Install the Scripts:  
     Copy the Files in the folder **Scripts/** into photoshop’s Scripts folder.  
@@ -10,7 +10,7 @@ It combines Photoshop’s JSX scripts, some pretty simple PSD templates and some
 
 2.  Start or restart Photoshop to get the scripts listed. You will find them in **File > Scripts**
 
-##The Project structure
+#The Project structure
 
 It includes 2 folders:
 
