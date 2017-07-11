@@ -232,4 +232,9 @@ var ImagesExporter = (function() {
 
 ////////////////////////////////////
 
-new ImagesExporter();
+try {
+  new ImagesExporter();
+} catch (error) {
+  Console.log(error);
+}
+
