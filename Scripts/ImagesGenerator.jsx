@@ -288,4 +288,9 @@ var ImagesGenerator = (function() {
 
 ////////////////////////////////////
 
-new ImagesGenerator();
+try {
+  new ImagesGenerator();
+} catch (error) {
+  Console.log(error);
+}
+
