@@ -74,6 +74,19 @@ var Helpers = {
       groupObj.layers[i].visible = true
     }
   },
+  //
+  // deleteHiddenLayers: function() {
+  //   var idDlt = charIDToTypeID( "Dlt " );
+  //   var desc1088 = new ActionDescriptor();
+  //   var idnull = charIDToTypeID( "null" );
+  //   var ref173 = new ActionReference();
+  //   var idLyr = charIDToTypeID( "Lyr " );
+  //   var idOrdn = charIDToTypeID( "Ordn" );
+  //   var idhidden = stringIDToTypeID( "hidden" );
+  //   ref173.putEnumerated( idLyr, idOrdn, idhidden );
+  //   desc1088.putReference( idnull, ref173 );
+  //   executeAction( idDlt, desc1088, DialogModes.NO );
+  // },
 
   createFolder: function(folderPath) {
     if (!folderPath) {
@@ -120,21 +133,61 @@ var Helpers = {
         saveOptions.format = SaveDocumentType.JPEG
     }
 
-    saveOptions.includeProfile = false
-    saveOptions.interlaced = false
-    saveOptions.optimized = true
-    saveOptions.quality = quality
-    activeDocument.exportDocument(File(fileName + '.' + format), ExportType.SAVEFORWEB, saveOptions)
+    saveOptions.includeProfile = false;
+    saveOptions.interlaced = false;
+    saveOptions.optimized = true;
+    saveOptions.quality = quality;
+    activeDocument.exportDocument(File(fileName + '.' + format), ExportType.SAVEFORWEB, saveOptions);
   },
 
   savePSD: function(fileName) {
-    var saveOptions = new PhotoshopSaveOptions()
-    saveOptions.layers = true
-    saveOptions.embedColorProfile = true
-    saveOptions.annotations = true
-    saveOptions.alphaChannels = true
-    saveOptions.spotColors = true
-    activeDocument.saveAs(File(fileName), saveOptions, true)
+    var saveOptions = new PhotoshopSaveOptions();
+    saveOptions.layers = true;
+    saveOptions.embedColorProfile = true;
+    saveOptions.annotations = true;
+    saveOptions.alphaChannels = true;
+    saveOptions.spotColors = true;
+    activeDocument.saveAs(File(fileName), saveOptions, true);
+  },
+
+  saveAsMov: function(savepath) {
+    var idExpr = charIDToTypeID( "Expr" );
+    var desc4 = new ActionDescriptor();
+    var idUsng = charIDToTypeID( "Usng" );
+      var desc5 = new ActionDescriptor();
+      var iddirectory = stringIDToTypeID( "directory" );
+      desc5.putPath( iddirectory, new File( savepath ) );
+      var idameFormatName = stringIDToTypeID( "ameFormatName" );
+      desc5.putString( idameFormatName, """QuickTime""" );
+      var idamePresetName = stringIDToTypeID( "amePresetName" );
+      desc5.putString( idamePresetName, """Animation High Quality.epr""" );
+      var iduseDocumentSize = stringIDToTypeID( "useDocumentSize" );
+      desc5.putBoolean( iduseDocumentSize, true );
+      var iduseDocumentFrameRate = stringIDToTypeID( "useDocumentFrameRate" );
+      desc5.putBoolean( iduseDocumentFrameRate, true );
+      var idpixelAspectRatio = stringIDToTypeID( "pixelAspectRatio" );
+      var idpixelAspectRatio = stringIDToTypeID( "pixelAspectRatio" );
+      var idDcmn = charIDToTypeID( "Dcmn" );
+      desc5.putEnumerated( idpixelAspectRatio, idpixelAspectRatio, idDcmn );
+      var idfieldOrder = stringIDToTypeID( "fieldOrder" );
+      var idvideoField = stringIDToTypeID( "videoField" );
+      var idpreset = stringIDToTypeID( "preset" );
+      desc5.putEnumerated( idfieldOrder, idvideoField, idpreset );
+      var idmanage = stringIDToTypeID( "manage" );
+      desc5.putBoolean( idmanage, true );
+      var idselectedFrames = stringIDToTypeID( "selectedFrames" );
+      desc5.putBoolean( idselectedFrames, true );
+      var idrenderAlpha = stringIDToTypeID( "renderAlpha" );
+      var idalphaRendering = stringIDToTypeID( "alphaRendering" );
+      var idstraight = stringIDToTypeID( "straight" );
+      desc5.putEnumerated( idrenderAlpha, idalphaRendering, idstraight );
+      var idQlty = charIDToTypeID( "Qlty" );
+      desc5.putInteger( idQlty, 1 );
+      var idZthreeDPrefHighQualityErrorThreshold = stringIDToTypeID( "Z3DPrefHighQualityErrorThreshold" );
+      desc5.putInteger( idZthreeDPrefHighQualityErrorThreshold, 5 );
+    var idvideoExport = stringIDToTypeID( "videoExport" );
+    desc4.putObject( idUsng, idvideoExport, desc5 );
+    executeAction( idExpr, desc4, DialogModes.NO );
   },
 
   isValidFileExtension: function(inFileName, inArrayOfFileExtensions) {

@@ -1,0 +1,60 @@
+/*
+Author: Ignacio Revuelta
+www.iamnacho.com
+
+Description:
+Draws an UI Window, based on the values sent.
+*/
+
+var UIWindow = (function() {
+  function UIWindow(data) {
+    this.data = null;
+    this.window = new Window(data.type, data.name, data.bounds);
+    this.addProperties(this.window, data.properties);
+    this.children = {}; //[]
+    this.children['window'] = this.window;
+  }
+
+  UIWindow.prototype = {
+
+    appendElements: function(data) {
+      this.data = data;
+      this.draw();
+    },
+
+    draw: function() {
+      var element = null;
+      for (var id in this.data) {
+        var parameters = this.data[id];
+        var destination = (parameters.parent === undefined) ? this.window : this.children[parameters.parent];
+        element = destination.add(parameters.type, parameters.bounds || undefined, parameters.title || '');
+        this.addProperties(element, parameters.properties);
+        this.children[id] = element;
+      }
+    },
+
+    addProperties: function(element, properties) {
+      for (var property in properties || {}) {
+        if (properties.hasOwnProperty(property)) {
+          element[property] = properties[property];
+        }
+      }
+    },
+
+    open: function() {
+      this.window.show();
+    },
+
+    close: function() {
+      this.window.close();
+    },
+
+    find: function(property) {
+      return this.children[property];
+    }
+
+  }
+
+  return UIWindow;
+
+})();

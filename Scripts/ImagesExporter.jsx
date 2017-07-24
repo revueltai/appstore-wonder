@@ -3,26 +3,32 @@ Author: Ignacio Revuelta
 www.iamnacho.com
 
 Description:
-This script reads all PSD files inside a given folder, then saves each of the Artboards as images (PNG, JPG)
+This script reads all PSD files inside a given folder, then saves the contents as images (PNG, JPG) or as MOV with transparency (Beta).
 */
 
 #target photoshop
 
 //@includepath "helpers/"
+//@include "UIWindow.jsxinc"
+//@include "UIProgressBar.jsxinc"
 //@include "Helpers.jsxinc"
-//@include "Console.jsxinc"
 
 var ImagesExporter = (function() {
 
   function ImagesExporter() {
+    var self = this;
 
-    this.timestamp = + new Date();
-    this.view = null;
+    this.saveAsVideo = true;
+    this.totalFiles = null;
+    this.progressbar = null;
     this.inputFolder = null;
     this.saveFolderPath = null;
+    this.timestamp = + new Date();
     this.outputOrientation = 'portrait';
     this.outputDevice = '';
-    this.format = 'jpg';
+    this.format = 'png';
+    this.fileHasArtboards = true;
+    this.formatList = ['png', 'jpg', 'mov'];
     this.devicesNameList = new Array();
     this.devicesNameList[0] = '';
     this.devices = {
@@ -46,139 +52,297 @@ var ImagesExporter = (function() {
         this.devicesNameList.push(key);
       }
     }
-    this.UIcreateWindow();
+
+    var view = new UIWindow({
+      type: 'dialog',
+      name: 'Images Exporter',
+      bounds: undefined,
+      properties: {
+        preferredSize: [200, 300],
+        alignChildren: ['fill', 'top'],
+        closeButton: true
+      }
+    });
+    view.appendElements({
+      'panelFolderInput': {
+        type: 'panel',
+        parent: undefined,
+        bounds: undefined,
+        title: 'Documents to process',
+        properties: {
+          margins: 20,
+          orientation: 'row'
+        }
+      },
+      'panelFolderInputField': {
+        type: 'edittext',
+        parent: 'panelFolderInput',
+        bounds: undefined,
+        title: '',
+        properties: {
+          readonly: true,
+          enabled: false,
+          characters: 25
+        }
+      },
+      'panelFolderInputBtn': {
+        type: 'button',
+        parent: 'panelFolderInput',
+        bounds: undefined,
+        title: 'Choose a file'
+      },
+      'panelFolderSave': {
+        type: 'panel',
+        parent: undefined,
+        bounds: undefined,
+        title: 'Export location',
+        properties: {
+          margins: 20,
+          orientation: 'row'
+        }
+      },
+      'panelFolderSaveField': {
+        type: 'edittext',
+        parent: 'panelFolderSave',
+        bounds: undefined,
+        title: '',
+        properties: {
+          readonly: true,
+          enabled: false,
+          characters: 25
+        }
+      },
+      'panelFolderSaveBtn': {
+        type: 'button',
+        parent: 'panelFolderSave',
+        bounds: undefined,
+        title: 'Choose folder',
+        properties: {
+          enabled: false
+        }
+      },
+      'panelFormat': {
+        type: 'panel',
+        parent: undefined,
+        bounds: undefined,
+        title: 'Export format',
+        properties: {
+          margins: 20,
+          orientation: 'row'
+        }
+      },
+      'selectorFormat': {
+        type: 'dropdownlist',
+        parent: 'panelFormat',
+        bounds: undefined,
+        title: self.formatList,
+        properties: {
+          selection: 0,
+          enabled: false,
+          name: 'formatList'
+        }
+      },
+      'panelFileSettings': {
+        type: 'panel',
+        parent: undefined,
+        bounds: undefined,
+        title: 'File Settings',
+        properties: {
+          margins: 20,
+          orientation: 'row'
+        }
+      },
+      'checkboxHasArtboards': {
+        type: 'checkbox',
+        parent: 'panelFileSettings',
+        bounds: undefined,
+        title: 'PSD has Artboards',
+        properties: {
+          enabled: false,
+          value: true
+        }
+      },
+      'panelOrientation': {
+        type: 'panel',
+        parent: undefined,
+        bounds: undefined,
+        title: 'Device Orientation',
+        properties: {
+          margins: 20,
+          orientation: 'row'
+        }
+      },
+      'radioPortrait': {
+        type: 'radiobutton',
+        parent: 'panelOrientation',
+        bounds: undefined,
+        title: 'Portrait',
+        properties: {
+          enabled: false,
+          value: true
+        }
+      },
+      'radioLandscape': {
+        type: 'radiobutton',
+        parent: 'panelOrientation',
+        bounds: undefined,
+        title: 'Landscape',
+        properties: {
+          enabled: false,
+          value: false
+        }
+      },
+      'panelDevice': {
+        type: 'panel',
+        parent: undefined,
+        bounds: undefined,
+        title: 'Select a device (Optional)',
+        properties: {
+          margins: 20,
+          orientation: 'row'
+        }
+      },
+      'selectorDevice': {
+        type: 'dropdownlist',
+        parent: 'panelDevice',
+        bounds: undefined,
+        title: self.devicesNameList,
+        properties: {
+          selection: 0,
+          enabled: false,
+          name: 'devicesList'
+        }
+      },
+      'footerGroup': {
+        type: 'group',
+        parent: undefined,
+        bounds: undefined,
+        title: '',
+        properties: {
+          orientation: 'row',
+          alignChildren: ['fill', 'top']
+        }
+      },
+      'btnClose': {
+        type: 'button',
+        parent: 'footerGroup',
+        bounds: undefined,
+        title: 'Cancel'
+      },
+      'btnRun': {
+        type: 'button',
+        parent: 'footerGroup',
+        bounds: undefined,
+        title: 'Run',
+        properties: {
+          enabled: false
+        }
+      }
+    });
+
+    view.find('panelFolderInputBtn').addEventListener('click', function() {
+      self.inputFolder = Folder.selectDialog('Select a folder of documents to process');
+      if (String(self.inputFolder).indexOf('/Source_files') != -1) {
+        self.saveFolderPath = String(self.inputFolder).split('/Source_files')[0] + '/Images-' + self.timestamp + '/';
+      } else {
+        self.saveFolderPath = self.inputFolder + '/';
+      }
+
+      view.find('panelFolderInputField').text = self.inputFolder;
+      view.find('panelFolderSaveField').text = self.saveFolderPath;
+      view.find('panelFolderInputField').enabled = true;
+      view.find('panelFolderSaveField').enabled = true;
+      view.find('panelFolderSaveBtn').enabled = true;
+      view.find('radioPortrait').enabled = true;
+      view.find('radioLandscape').enabled = true;
+      view.find('checkboxHasArtboards').enabled = true;
+      view.find('selectorFormat').enabled = true;
+      view.find('selectorDevice').enabled = true;
+      view.find('btnRun').enabled = true;
+
+      view.find('panelFolderInputField').helpTip = self.inputFolder;
+      view.find('panelFolderSaveField').helpTip = self.saveFolderPath;
+    });
+    view.find('selectorFormat').addEventListener('change', function() {
+      self.format = String(view.find('selectorFormat').selection);
+      if (self.format == 'mov') {
+        view.find('panelOrientation').enabled = false;
+        view.find('panelDevice').enabled = false;
+        view.find('panelFileSettings').enabled = false;
+      } else {
+        view.find('panelOrientation').enabled = true;
+        view.find('panelDevice').enabled = true;
+        view.find('panelFileSettings').enabled = true;
+      }
+    });
+    view.find('panelFolderSaveBtn').addEventListener('click', function() {
+      self.saveFolderPath = Folder.selectDialog('Select a save folder') + '/';
+      view.find('panelFolderSaveField').text = self.saveFolderPath;
+      view.find('panelFolderSaveField').enabled = true;
+      view.find('panelFolderSaveField').helpTip = self.saveFolderPath;
+    });
+    view.find('btnClose').addEventListener('click', function() {
+      view.close();
+    });
+    view.find('btnRun').addEventListener('click', function() {
+      if (self.inputFolder !== null && self.saveFolderPath !== null) {
+        self.format = String(view.find('selectorFormat').selection);
+        self.outputOrientation = (view.find('radioPortrait').value) ? view.find('radioPortrait').text : view.find('radioLandscape').text;
+        self.outputDevice = view.find('selectorDevice').selection;
+
+        view.find('panelFolderInput').visible = false;
+        view.find('panelFolderSave').visible = false;
+
+        self.fileHasArtboards = view.find('checkboxHasArtboards').value;
+
+        view.close();
+        self.initialize();
+      } else {
+        alert('Please, fill in all required fields');
+      }
+    });
+    view.open();
   }
 
   ImagesExporter.prototype = {
 
-    UIcreateWindow: function() {
-      var self = this;
-      this.view = new Window('dialog', 'Images Exporter');
-
-      var view = this.view
-      view.preferredSize = [200, 300]
-      view.alignChildren = ['fill', 'top']
-
-      var panelFolderInput = view.add('Panel', undefined, 'Documents to process')
-      panelFolderInput.margins = 20
-      panelFolderInput.orientation = 'row'
-      var panelFolderInputField = panelFolderInput.add('edittext', undefined, '', {readonly: true})
-      panelFolderInputField.characters = 25
-      panelFolderInputField.enabled = false
-      var panelFolderInputBtn = panelFolderInput.add('button', undefined, 'Choose folder')
-
-      var panelFolderSave = view.add('Panel', undefined, 'Export location')
-      panelFolderSave.margins = 20
-      panelFolderSave.orientation = 'row'
-      var panelFolderSaveField = panelFolderSave.add('edittext', undefined, '', {readonly: true})
-      panelFolderSaveField.characters = 25
-      panelFolderSaveField.enabled = false
-      var panelFolderSaveBtn = panelFolderSave.add('button', undefined, 'Choose folder')
-
-      var panelFormat = view.add('Panel', undefined, 'Export Format')
-      panelFormat.orientation = 'row'
-      panelFormat.margins = 20
-      var radioJPG = panelFormat.add('radiobutton', undefined, 'jpg')
-      var radioPNG = panelFormat.add('radiobutton', undefined, 'png')
-      radioJPG.value = true;
-
-      var panelOrientation = view.add('Panel', undefined, 'Device Format')
-      panelOrientation.orientation = 'row'
-      panelOrientation.margins = 20
-      var radioPortrait = panelOrientation.add('radiobutton', undefined, 'portrait')
-      var radioLandscape = panelOrientation.add('radiobutton', undefined, 'landscape')
-      radioPortrait.value = true
-
-      var panelDevice = view.add('Panel', undefined, 'Select a device (Optional)')
-      panelDevice.orientation = 'row'
-      var selector = panelDevice.add('dropdownlist', undefined, self.devicesNameList, {name: 'devicesList'})
-      selector.selection = 0
-
-      var footer = view.add('Group')
-      footer.orientation = 'row'
-      footer.alignChildren = ['fill', 'top']
-      var btnClose = footer.add('button', undefined, 'Cancel')
-      var btnContinue = footer.add('button', undefined, 'Run')
-
-      panelFolderInputBtn.addEventListener('click', function() {
-        self.inputFolder = Folder.selectDialog('Select a folder of documents to process')
-        if (String(self.inputFolder).indexOf('/Source_files') != -1) {
-          self.saveFolderPath = String(self.inputFolder).split('/Source_files')[0] + '/';
-        } else {
-          self.saveFolderPath = self.inputFolder + '/';
-        }
-
-        panelFolderInputField.text = self.inputFolder
-        panelFolderSaveField.text = self.saveFolderPath
-        panelFolderInputField.enabled = true
-        panelFolderSaveField.enabled = true
-        panelFolderInputField.helpTip = self.inputFolder
-        panelFolderSaveField.helpTip = self.saveFolderPath
-      })
-
-      panelFolderSaveBtn.addEventListener('click', function() {
-        self.saveFolderPath = Folder.selectDialog('Select a save folder') + '/'
-        panelFolderSaveField.text = self.saveFolderPath
-        panelFolderSaveField.enabled = true
-        panelFolderSaveField.helpTip = self.saveFolderPath
-      })
-
-      btnClose.addEventListener('click', function() {
-        view.close()
-      })
-
-      btnContinue.addEventListener('click', function() {
-        if (self.inputFolder !== null && self.saveFolderPath !== null) {
-          self.format = radioPNG.value ? radioPNG.text : radioJPG.text
-          self.outputOrientation = radioPortrait.value ? radioPortrait.text : radioLandscape.text
-          self.outputDevice = selector.selection
-
-          panelFolderInput.visible = false
-          panelFolderSave.visible = false
-
-          view.close()
-          self.initialize()
-        } else {
-          alert('Please, fill all required fields');
-        }
-      })
-
-      var rs = view.show()
-    },
-
     initialize: function() {
       var workFiles = [];
       var fileList = this.inputFolder.getFiles();
+      this.progressbar = new UIProgressBar({
+        title: 'Exporting Images',
+        message: 'This might take a while...'
+      });
       for (var i = 0; i < fileList.length; ++i) {
         if (fileList[i] instanceof File && !fileList[i].hidden && Helpers.isValidFileExtension(fileList[i], Array('psd'))) {
           fileName = String(fileList[i]).split('/').pop();
-          documentName = fileName.substring(0, fileName.indexOf('.'));
           workFiles.push({
             file: fileList[i],
-            name: documentName
-          })
+            name: fileName.substring(0, fileName.indexOf('.'))
+          });
         }
       }
-
       this.handleFiles(workFiles);
     },
 
     handleFiles: function(workFiles) {
       for (var i = 0; i < workFiles.length; ++i) {
-        current = workFiles[i]
-        if (this.outputDevice != '' && this.languagesMapping.hasOwnProperty(current.name)) {
-          var folders = this.languagesMapping[current.name]
+        currentFile = workFiles[i];
+        if (this.outputDevice != '' && this.languagesMapping.hasOwnProperty(currentFile.name)) {
+          var folders = this.languagesMapping[currentFile.name];
           for (var j = 0; j < folders.length; ++j) {
-            this.handleActiveFile(current.file, folders[j])
+            this.handleActiveFile(currentFile.file, folders[j]);
           }
         } else {
-          this.handleActiveFile(current.file, current.name)
+          this.handleActiveFile(currentFile.file, currentFile.name);
         }
-
       }
     },
 
     handleActiveFile: function(file, saveFolder) {
+      var w = null;
+      var h = null;
+      var saveFolderPath = null;
 
       open(file);
 
@@ -186,42 +350,54 @@ var ImagesExporter = (function() {
         return;
       }
 
-      var w = null;
-      var h = null;
-      var baseDocument = activeDocument;
+      this.progressbar.updateText('Exporting...');
 
-      if (this.outputDevice != '') {
-        var outputSize = this.devices[this.outputDevice];
-        if (this.outputOrientation === 'portrait') {
-          w = outputSize[0];
-          h = outputSize[1];
-        } else if(this.outputOrientation === 'landscape') {
-          w = outputSize[1];
-          h = outputSize[0];
-        }
-      }
-
-      var saveFolderPath = Helpers.createFolder(this.saveFolderPath + '/Images-' + this.timestamp + '/' + saveFolder + '/');
-      var saveFileName = null;
-
-      for (var i = 0; i < baseDocument.layerSets.length; ++i) {
-        var layerName = baseDocument.layerSets[i].name;
-        activeDocument.activeLayer = activeDocument.layers.getByName(layerName);
-        Helpers.duplicateLayers();
-        activeDocument.mergeVisibleLayers();
-        activeDocument.trim(TrimType.TRANSPARENT, true, true, true, true);
+      if (this.format === 'mov') {
+        saveFolderPath = Helpers.createFolder(this.saveFolderPath);
+        Helpers.saveAsMov(saveFolderPath);
+      } else {
 
         if (this.outputDevice != '') {
-          saveFileName = layerName + '_' + String(this.outputDevice) + '_' + layerName + '.Screenshot-' + w + 'x' + h;
-          activeDocument.resizeCanvas(w, h);
-        } else {
-          saveFileName = layerName;
+          var outputSize = this.devices[this.outputDevice];
+          if (this.outputOrientation === 'portrait') {
+            w = outputSize[0];
+            h = outputSize[1];
+          } else if(this.outputOrientation === 'landscape') {
+            w = outputSize[1];
+            h = outputSize[0];
+          }
         }
 
-        Helpers.saveImageForWeb(saveFolderPath + saveFileName, this.format, 10);
-        activeDocument.close(SaveOptions.DONOTSAVECHANGES);
+        if (!this.fileHasArtboards) {
+          activeDocument.mergeVisibleLayers();
+          activeDocument.trim(TrimType.TRANSPARENT, true, true, true, true);
+          saveFolderPath = Helpers.createFolder(this.saveFolderPath);
+          this.exportImage(saveFolderPath, saveFolder, w, h);
+        } else {
+          var layerName = null;
+          saveFolderPath = Helpers.createFolder(this.saveFolderPath + saveFolder + '/');
+          for (var i = 0; i < activeDocument.layerSets.length; ++i) {
+            layerName = activeDocument.layerSets[i].name;
+            activeDocument.activeLayer = activeDocument.layers.getByName(layerName);
+            Helpers.duplicateLayers();
+            activeDocument.mergeVisibleLayers();
+            activeDocument.trim(TrimType.TRANSPARENT, true, true, true, true);
+            this.exportImage(saveFolderPath, layerName, w, h);
+          }
+          activeDocument.close(SaveOptions.DONOTSAVECHANGES);
+        }
       }
+    },
 
+    exportImage: function(saveFolderPath, name, w, h) {
+      var saveFileName = null;
+      if (this.outputDevice != '') {
+        saveFileName = name + '_' + String(this.outputDevice) + '_' + name + '.Screenshot-' + w + 'x' + h;
+        activeDocument.resizeCanvas(w, h);
+      } else {
+        saveFileName = name;
+      }
+      Helpers.saveImageForWeb(saveFolderPath + saveFileName, this.format, 10);
       activeDocument.close(SaveOptions.DONOTSAVECHANGES);
     }
   }
@@ -232,4 +408,8 @@ var ImagesExporter = (function() {
 
 ////////////////////////////////////
 
-new ImagesExporter();
+try {
+  new ImagesExporter();
+} catch (error) {
+  alert(error);
+}

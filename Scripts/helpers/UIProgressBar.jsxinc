@@ -1,0 +1,60 @@
+/*
+Author: Ignacio Revuelta
+www.iamnacho.com
+
+Description:
+Shows a Progress bar UI window
+
+Based on this Gist: https://gist.github.com/Vestride/3050563
+*/
+
+var UIProgressBar = (function() {
+  function UIProgressBar(opts) {
+    this.title = opts.title || '';
+    this.message = opts.message || '';
+    this.min = opts.min;
+    this.max = opts.max;
+    this.win = new Window('palette', this.title);
+
+    if (this.max) {
+      this.win.bar = this.win.add('progressbar', undefined, this.min, this.max);
+      this.win.bar.preferredSize = [300, 20];
+    }
+
+    this.win.stProgress = this.win.add('statictext');
+    this.win.stProgress.preferredSize.width = 230;
+    this.updateText(this.message);
+
+    this.win.center(this.win.parent);
+    this.win.show();
+    this.win.isDone = false;
+  }
+
+  UIProgressBar.prototype = {
+    updateProgress: function(val) {
+      var win = this.win;
+      if (win.isDone) {
+        return;
+      }
+      if (win.bar.value + val <= this.max && val !== undefined) {
+        win.bar.value = val;
+      } else {
+        win.bar.value++;
+      }
+      if (win.recenter) {
+        win.center(win.parentWin);
+      }
+      win.update();
+    },
+
+    close: function() {
+      this.win.close();
+    },
+
+    updateText: function(text) {
+      this.win.stProgress.text = text;
+    }
+  }
+
+  return UIProgressBar;
+})();
