@@ -411,5 +411,11 @@ var ImagesExporter = (function() {
 try {
   new ImagesExporter();
 } catch (error) {
+<<<<<<< HEAD
   alert(error);
 }
+=======
+  Console.log(error);
+}
+
+>>>>>>> origin/master

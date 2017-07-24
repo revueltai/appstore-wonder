@@ -22,7 +22,7 @@ Example_folder/	                # You can rename it as you want
 | 
 |-- _languages/                 # Contains all languages vars, placed in subfolders, 1 for each language
 |   |-- [ language_folders ]/   # each folder is named after its language code (en, es, de, etc)
-|   |   |-- images.json   	    # a JSON file containing the language vars
+|   |   |-- images.json   	    # a JSON file containing the language vars. It can be named as wanted.
 |   |   ...
 |
 |-- _templates/                 # Contains all PSD templates, one for each device size and orientation
@@ -63,7 +63,7 @@ Each JSON file looks like this:
   "image5_2": "Share it!"
 }
 ```
-You can add new subfolders, but they should contain a `images.json` file like the one in the other subfolders.
+You can add new language subfolders, but they should contain a `json` file like the one in the other subfolders. You can name that file as you desire.
 
 **Replace/Rename the text layers inside the template PSDs that you will need:** Replace/Rename the text layers according to the language keys that you defined in the JSON files of point 1\. For example, if your JSON files have a key named “foo” the templates should also have a textfield named “foo”. You can add or remove texts layers as you require.
 
