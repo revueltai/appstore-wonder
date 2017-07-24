@@ -390,11 +390,5 @@ var ImagesGenerator = (function() {
 try {
   new ImagesGenerator();
 } catch (error) {
-<<<<<<< HEAD
   alert(error);
 }
-=======
-  Console.log(error);
-}
-
->>>>>>> origin/master

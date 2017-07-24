@@ -74,19 +74,6 @@ var Helpers = {
       groupObj.layers[i].visible = true
     }
   },
-  //
-  // deleteHiddenLayers: function() {
-  //   var idDlt = charIDToTypeID( "Dlt " );
-  //   var desc1088 = new ActionDescriptor();
-  //   var idnull = charIDToTypeID( "null" );
-  //   var ref173 = new ActionReference();
-  //   var idLyr = charIDToTypeID( "Lyr " );
-  //   var idOrdn = charIDToTypeID( "Ordn" );
-  //   var idhidden = stringIDToTypeID( "hidden" );
-  //   ref173.putEnumerated( idLyr, idOrdn, idhidden );
-  //   desc1088.putReference( idnull, ref173 );
-  //   executeAction( idDlt, desc1088, DialogModes.NO );
-  // },
 
   createFolder: function(folderPath) {
     if (!folderPath) {

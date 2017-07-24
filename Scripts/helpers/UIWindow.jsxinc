@@ -11,7 +11,7 @@ var UIWindow = (function() {
     this.data = null;
     this.window = new Window(data.type, data.name, data.bounds);
     this.addProperties(this.window, data.properties);
-    this.children = {}; //[]
+    this.children = {};
     this.children['window'] = this.window;
   }
 
