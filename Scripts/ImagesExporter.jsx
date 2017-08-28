@@ -23,12 +23,15 @@ var ImagesExporter = (function() {
     this.progressbar = null;
     this.inputFolder = null;
     this.saveFolderPath = null;
+    this.prefixString = '';
     this.timestamp = + new Date();
     this.outputOrientation = 'portrait';
     this.outputDevice = '';
     this.format = 'png';
-    this.fileHasArtboards = true;
+    this.prefix = 'prefix';
     this.formatList = ['png', 'jpg', 'mov'];
+    this.prefixList = ['prefix', 'suffix'];
+    this.fileHasArtboards = true;
     this.devicesNameList = new Array();
     this.devicesNameList[0] = '';
     this.devices = {
@@ -121,32 +124,11 @@ var ImagesExporter = (function() {
           enabled: false
         }
       },
-      'panelFormat': {
-        type: 'panel',
-        parent: undefined,
-        bounds: undefined,
-        title: 'Export format',
-        properties: {
-          margins: 20,
-          orientation: 'row'
-        }
-      },
-      'selectorFormat': {
-        type: 'dropdownlist',
-        parent: 'panelFormat',
-        bounds: undefined,
-        title: self.formatList,
-        properties: {
-          selection: 0,
-          enabled: false,
-          name: 'formatList'
-        }
-      },
       'panelFileSettings': {
         type: 'panel',
         parent: undefined,
         bounds: undefined,
-        title: 'File Settings',
+        title: 'PSD Settings',
         properties: {
           margins: 20,
           orientation: 'row'
@@ -160,6 +142,67 @@ var ImagesExporter = (function() {
         properties: {
           enabled: false,
           value: true
+        }
+      },
+      'panelFormat': {
+        type: 'panel',
+        parent: undefined,
+        bounds: undefined,
+        title: 'Export Settings',
+        properties: {
+          margins: 20,
+          orientation: 'row'
+        }
+      },
+      'formatLabel': {
+        type: 'statictext',
+        parent: 'panelFormat',
+        bounds: undefined,
+        title: 'Format:',
+        properties: {
+          readonly: true
+        }
+      },
+      'selectorFormat': {
+        type: 'dropdownlist',
+        parent: 'panelFormat',
+        bounds: undefined,
+        title: self.formatList,
+        properties: {
+          selection: 0,
+          enabled: false,
+          name: 'formatList'
+        }
+      },
+      'PrefixLabel': {
+        type: 'statictext',
+        parent: 'panelFormat',
+        bounds: undefined,
+        title: 'Filename String:',
+        properties: {
+          readonly: true
+        }
+      },
+      'filenameString': {
+        type: 'edittext',
+        parent: 'panelFormat',
+        bounds: undefined,
+        title: '',
+        properties: {
+          readonly: true,
+          enabled: false,
+          characters: 10
+        }
+      },
+      'selectorPrefix': {
+        type: 'dropdownlist',
+        parent: 'panelFormat',
+        bounds: undefined,
+        title: self.prefixList,
+        properties: {
+          selection: 0,
+          enabled: false,
+          name: 'prefixList'
         }
       },
       'panelOrientation': {
@@ -237,31 +280,57 @@ var ImagesExporter = (function() {
         properties: {
           enabled: false
         }
+      },
+      'creditsGroup': {
+        type: 'group',
+        parent: undefined,
+        bounds: undefined,
+        title: '',
+        properties: {
+          orientation: 'row',
+          alignChildren: ['fill', 'top']
+        }
+      },
+      'credits': {
+        type: 'statictext',
+        parent: 'creditsGroup',
+        bounds: undefined,
+        title: 'Made with love and cookies by iamnacho.com',
+        properties: {
+          enabled: false,
+          readonly: true
+        }
       }
     });
 
     view.find('panelFolderInputBtn').addEventListener('click', function() {
       self.inputFolder = Folder.selectDialog('Select a folder of documents to process');
-      if (String(self.inputFolder).indexOf('/Source_files') != -1) {
-        self.saveFolderPath = String(self.inputFolder).split('/Source_files')[0] + '/Images-' + self.timestamp + '/';
-      } else {
-        self.saveFolderPath = self.inputFolder + '/';
+      self.inputFolder = self.inputFolder === null ? '' : self.inputFolder;
+
+      if (self.inputFolder !== '') {
+        if (String(self.inputFolder).indexOf('/Source_files') != -1) {
+          self.saveFolderPath = String(self.inputFolder).split('/Source_files')[0] + '/Images-' + self.timestamp + '/';
+        } else {
+          self.saveFolderPath = self.inputFolder + '/';
+        }
+
+        view.find('panelFolderInputField').text = self.inputFolder;
+        view.find('panelFolderSaveField').text = self.saveFolderPath;
+        view.find('panelFolderInputField').enabled = true;
+        view.find('panelFolderSaveField').enabled = true;
+        view.find('panelFolderSaveBtn').enabled = true;
+        view.find('radioPortrait').enabled = true;
+        view.find('radioLandscape').enabled = true;
+        view.find('checkboxHasArtboards').enabled = true;
+        view.find('selectorFormat').enabled = true;
+        view.find('selectorDevice').enabled = true;
+        view.find('btnRun').enabled = true;
+        view.find('filenameString').enabled = true;
+        view.find('selectorPrefix').enabled = true;
+
+        view.find('panelFolderInputField').helpTip = self.inputFolder;
+        view.find('panelFolderSaveField').helpTip = self.saveFolderPath;
       }
-
-      view.find('panelFolderInputField').text = self.inputFolder;
-      view.find('panelFolderSaveField').text = self.saveFolderPath;
-      view.find('panelFolderInputField').enabled = true;
-      view.find('panelFolderSaveField').enabled = true;
-      view.find('panelFolderSaveBtn').enabled = true;
-      view.find('radioPortrait').enabled = true;
-      view.find('radioLandscape').enabled = true;
-      view.find('checkboxHasArtboards').enabled = true;
-      view.find('selectorFormat').enabled = true;
-      view.find('selectorDevice').enabled = true;
-      view.find('btnRun').enabled = true;
-
-      view.find('panelFolderInputField').helpTip = self.inputFolder;
-      view.find('panelFolderSaveField').helpTip = self.saveFolderPath;
     });
     view.find('selectorFormat').addEventListener('change', function() {
       self.format = String(view.find('selectorFormat').selection);
@@ -287,13 +356,14 @@ var ImagesExporter = (function() {
     view.find('btnRun').addEventListener('click', function() {
       if (self.inputFolder !== null && self.saveFolderPath !== null) {
         self.format = String(view.find('selectorFormat').selection);
+        self.prefix = String(view.find('selectorPrefix').selection);
+        self.prefixString = view.find('filenameString').text;
+        self.fileHasArtboards = view.find('checkboxHasArtboards').value;
         self.outputOrientation = (view.find('radioPortrait').value) ? view.find('radioPortrait').text : view.find('radioLandscape').text;
         self.outputDevice = view.find('selectorDevice').selection;
 
         view.find('panelFolderInput').visible = false;
         view.find('panelFolderSave').visible = false;
-
-        self.fileHasArtboards = view.find('checkboxHasArtboards').value;
 
         view.close();
         self.initialize();
@@ -340,10 +410,6 @@ var ImagesExporter = (function() {
     },
 
     handleActiveFile: function(file, saveFolder) {
-      var w = null;
-      var h = null;
-      var saveFolderPath = null;
-
       open(file);
 
       if (!documents.length) {
@@ -353,9 +419,12 @@ var ImagesExporter = (function() {
       this.progressbar.updateText('Exporting...');
 
       if (this.format === 'mov') {
-        saveFolderPath = Helpers.createFolder(this.saveFolderPath);
-        Helpers.saveAsMov(saveFolderPath);
+        Helpers.saveAsMov(Helpers.createFolder(this.saveFolderPath), this.defineFileName(saveFolder));
+        activeDocument.close(SaveOptions.DONOTSAVECHANGES);
       } else {
+
+        var w = null;
+        var h = null;
 
         if (this.outputDevice != '') {
           var outputSize = this.devices[this.outputDevice];
@@ -371,11 +440,10 @@ var ImagesExporter = (function() {
         if (!this.fileHasArtboards) {
           activeDocument.mergeVisibleLayers();
           activeDocument.trim(TrimType.TRANSPARENT, true, true, true, true);
-          saveFolderPath = Helpers.createFolder(this.saveFolderPath);
-          this.exportImage(saveFolderPath, saveFolder, w, h);
+          this.exportImage(Helpers.createFolder(this.saveFolderPath), saveFolder, w, h);
         } else {
           var layerName = null;
-          saveFolderPath = Helpers.createFolder(this.saveFolderPath + saveFolder + '/');
+          var saveFolderPath = Helpers.createFolder(this.saveFolderPath + saveFolder + '/');
           for (var i = 0; i < activeDocument.layerSets.length; ++i) {
             layerName = activeDocument.layerSets[i].name;
             activeDocument.activeLayer = activeDocument.layers.getByName(layerName);
@@ -389,15 +457,19 @@ var ImagesExporter = (function() {
       }
     },
 
-    exportImage: function(saveFolderPath, name, w, h) {
-      var saveFileName = null;
-      if (this.outputDevice != '') {
-        saveFileName = name + '_' + String(this.outputDevice) + '_' + name + '.Screenshot-' + w + 'x' + h;
-        activeDocument.resizeCanvas(w, h);
-      } else {
-        saveFileName = name;
+    defineFileName: function(name) {
+      if (this.prefix === 'prefix') {
+        return this.prefixString + name;
+      } else if (this.prefix === 'suffix') {
+        return name + this.prefixString;
       }
-      Helpers.saveImageForWeb(saveFolderPath + saveFileName, this.format, 10);
+    },
+
+    exportImage: function(saveFolderPath, fileName, w, h) {
+      if (this.outputDevice != '') {
+        activeDocument.resizeCanvas(w, h);
+      }
+      Helpers.saveImageForWeb(saveFolderPath + this.defineFileName(fileName), this.format, 10);
       activeDocument.close(SaveOptions.DONOTSAVECHANGES);
     }
   }

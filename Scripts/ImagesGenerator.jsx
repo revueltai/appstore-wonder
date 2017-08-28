@@ -211,6 +211,26 @@ var ImagesGenerator = (function() {
         properties: {
           enabled: false
         }
+      },
+      'creditsGroup': {
+        type: 'group',
+        parent: undefined,
+        bounds: undefined,
+        title: '',
+        properties: {
+          orientation: 'row',
+          alignChildren: ['fill', 'top']
+        }
+      },
+      'credits': {
+        type: 'statictext',
+        parent: 'creditsGroup',
+        bounds: undefined,
+        title: 'Made with love and cookies by iamnacho.com',
+        properties: {
+          enabled: false,
+          readonly: true
+        }
       }
     });
     view.find('panelTemplateBtn').addEventListener('click', function() {
